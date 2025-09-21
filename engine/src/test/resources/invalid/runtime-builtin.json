@@ -1,0 +1,32 @@
+{
+  "META": {
+    "dslVersion": "v2",
+    "name": "runtime-builtin",
+    "targetAspect": "urn:test:runtime-builtin"
+  },
+  "ENGINE": {
+    "api": "v2",
+    "output": "$MAPPINGS.root"
+  },
+  "INPUT": {},
+  "SCHEMA": {},
+  "FUNCTIONS": {
+    "bad": { "type": "builtin", "fn": "pos_int_between" }
+  },
+  "VARIABLES": {
+    "value": {
+      "type": "number",
+      "derive": { "function": "$FUNCTIONS.bad", "args": [ 5, 3 ] }
+    }
+  },
+  "MAPPINGS": {
+    "root": {
+      "REF": "root",
+      "MAP": {
+        "value": "$VARIABLES.value"
+      }
+    }
+  },
+  "VALIDATION": {}
+}
+

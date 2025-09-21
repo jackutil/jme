@@ -1,0 +1,17 @@
+{
+  "META": {
+    "dslVersion": "v2",
+    "name": "test",
+    "targetAspect": "urn:test"
+  },
+  "ENGINE": {
+    "api": "v2",
+    "output": "$MAPPINGS.root"
+  },
+  "INPUT": {},
+  "SCHEMA": {},
+  "FUNCTIONS": {},
+  "VARIABLES": {},
+  "VALIDATION": {}
+}
+

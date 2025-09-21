@@ -1,0 +1,60 @@
+{
+  "META": {
+    "dslVersion": "v2",
+    "name": "builtins",
+    "targetAspect": "urn:test:builtins"
+  },
+  "ENGINE": {
+    "api": "v2",
+    "output": "$MAPPINGS.root"
+  },
+  "INPUT": {},
+  "SCHEMA": {},
+  "FUNCTIONS": {
+    "uuidFn": { "type": "builtin", "fn": "uuid" },
+    "padLeft": { "type": "builtin", "fn": "pad_left" },
+    "concat": { "type": "builtin", "fn": "concat" },
+    "lookupColor": {
+      "type": "builtin",
+      "fn": "lookup",
+      "args": [ { "A": "Amber", "B": "Blue" }, "Unknown" ]
+    },
+    "adder": { "type": "builtin", "fn": "add" }
+  },
+  "VARIABLES": {
+    "generatedId": {
+      "type": "string",
+      "derive": { "function": "$FUNCTIONS.uuidFn" }
+    },
+    "padded": {
+      "type": "string",
+      "derive": { "function": "$FUNCTIONS.padLeft", "args": [ "42", 5, "0" ] }
+    },
+    "label": {
+      "type": "string",
+      "derive": { "function": "$FUNCTIONS.concat", "args": [ "pre", "-", "value" ] }
+    },
+    "color": {
+      "type": "string",
+      "derive": { "function": "$FUNCTIONS.lookupColor", "args": [ "B" ] }
+    },
+    "sum": {
+      "type": "number",
+      "derive": { "function": "$FUNCTIONS.adder", "args": [ 1, 2, 3 ] }
+    }
+  },
+  "MAPPINGS": {
+    "root": {
+      "REF": "root",
+      "MAP": {
+        "generatedId": "$VARIABLES.generatedId",
+        "padded": "$VARIABLES.padded",
+        "label": "$VARIABLES.label",
+        "color": "$VARIABLES.color",
+        "sum": "$VARIABLES.sum"
+      }
+    }
+  },
+  "VALIDATION": {}
+}
+

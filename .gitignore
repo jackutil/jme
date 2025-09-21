@@ -1,0 +1,15 @@
+# Build outputs
+**/target/
+**/build/
+**/out/
+**/dist/
+**/bin/
+**/generated/
+# IDE configuration
+.idea/
+**/.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+**/.vscode/

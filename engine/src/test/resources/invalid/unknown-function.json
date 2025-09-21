@@ -1,0 +1,30 @@
+{
+  "META": {
+    "dslVersion": "v2",
+    "name": "bad-function",
+    "targetAspect": "urn:test:bad-function"
+  },
+  "ENGINE": {
+    "api": "v2",
+    "output": "$MAPPINGS.root"
+  },
+  "INPUT": {},
+  "SCHEMA": {},
+  "FUNCTIONS": {},
+  "VARIABLES": {
+    "id": {
+      "type": "string",
+      "derive": { "function": "$FUNCTIONS.missing" }
+    }
+  },
+  "MAPPINGS": {
+    "root": {
+      "REF": "root",
+      "MAP": {
+        "id": "$VARIABLES.id"
+      }
+    }
+  },
+  "VALIDATION": {}
+}
+

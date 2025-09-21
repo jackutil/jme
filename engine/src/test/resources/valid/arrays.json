@@ -1,0 +1,40 @@
+{
+  "META": {
+    "dslVersion": "v2",
+    "name": "arrays",
+    "targetAspect": "urn:test:arrays"
+  },
+  "ENGINE": {
+    "api": "v2",
+    "output": "$MAPPINGS.root"
+  },
+  "INPUT": {},
+  "SCHEMA": {},
+  "FUNCTIONS": {
+    "upper": { "type": "builtin", "fn": "uppercase" }
+  },
+  "VARIABLES": {
+    "label": {
+      "type": "string",
+      "derive": { "function": "$FUNCTIONS.upper", "args": [ "box" ] }
+    },
+    "items": {
+      "type": "array",
+      "default": [
+        { "name": "foo", "qty": 1 },
+        { "name": "bar", "qty": 2 }
+      ]
+    }
+  },
+  "MAPPINGS": {
+    "root": {
+      "REF": "root",
+      "MAP": {
+        "label": "$VARIABLES.label",
+        "items": "$VARIABLES.items"
+      }
+    }
+  },
+  "VALIDATION": {}
+}
+

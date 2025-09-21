@@ -1,0 +1,31 @@
+{
+  "META": {
+    "dslVersion": "v2",
+    "name": "test",
+    "targetAspect": "urn:test"
+  },
+  "ENGINE": {
+    "api": "v2",
+    "output": "$MAPPINGS.root"
+  },
+  "INPUT": {},
+  "SCHEMA": {
+    "batch": { "ref": "classpath:schema/batch.json" }
+  },
+  "FUNCTIONS": {},
+  "VARIABLES": {
+    "id": {
+      "type": "string"
+    }
+  },
+  "MAPPINGS": {
+    "root": {
+      "REF": "root",
+      "MAP": {
+        "id": "$VARIABLES.unknown"
+      }
+    }
+  },
+  "VALIDATION": {}
+}
+

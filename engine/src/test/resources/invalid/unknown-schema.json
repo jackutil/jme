@@ -1,0 +1,29 @@
+{
+  "META": {
+    "dslVersion": "v2",
+    "name": "bad-schema",
+    "targetAspect": "urn:test:bad-schema"
+  },
+  "ENGINE": {
+    "api": "v2",
+    "output": "$MAPPINGS.root",
+    "validation": "$SCHEMA.main"
+  },
+  "INPUT": {},
+  "SCHEMA": {},
+  "FUNCTIONS": {},
+  "VARIABLES": {},
+  "MAPPINGS": {
+    "root": {
+      "REF": "root",
+      "MAP": {}
+    }
+  },
+  "VALIDATION": {
+    "post": {
+      "schema": "$SCHEMA.main",
+      "phase": "post-map"
+    }
+  }
+}
+

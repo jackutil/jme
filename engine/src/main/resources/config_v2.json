@@ -1,0 +1,160 @@
+{
+  "META": {
+    "dslVersion": "v2",
+    "name": "catenax.io.batch#3.0.0",
+    "targetAspect": "urn:samm:io.catenax.batch:3.0.0#Batch",
+    "description": "Proof-of-concept mapping for Batch aspect using structured variable declarations.",
+    "owner": "mapping-team",
+    "lastUpdated": "2024-05-24"
+  },
+  "ENGINE": {
+    "api": "v2",
+    "output": "$MAPPINGS.batch",
+    "validation": "$SCHEMA.batch"
+  },
+  "INPUT": {},
+  "SCHEMA": {
+    "batch": {
+      "ref": "classpath:schema/batch-schema.json",
+      "dialect": "http://json-schema.org/draft-04/schema",
+      "strict": true
+    }
+  },
+  "FUNCTIONS": {
+    "uuidV4": {
+      "type": "regex",
+      "pattern": "(?i)^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "description": "Validates Catena-X anonymous identifier format."
+    },
+    "alphaNumericUpper": {
+      "type": "regex",
+      "pattern": "^[0-9A-Z]+$",
+      "description": "Ensures uppercase alphanumeric keys."
+    },
+    "bpns": {
+      "type": "regex",
+      "pattern": "^BPNS[0-9A-Z]{8}$",
+      "description": "Validates Catena-X BPNS site identifiers."
+    }
+  },
+  "VARIABLES": {
+    "catenaXId": {
+      "type": "string",
+      "required": true,
+      "constraints": ["$FUNCTIONS.uuidV4"]
+    },
+    "batchId": {
+      "type": "string",
+      "required": true,
+      "constraints": ["$FUNCTIONS.alphaNumericUpper"]
+    },
+    "manufacturerPartId": {
+      "type": "string",
+      "required": true,
+      "maxLength": 50,
+      "constraints": ["$FUNCTIONS.alphaNumericUpper"],
+      "description": "Part number provided by the MES payload."
+    },
+    "nameAtManufacturer": {
+      "type": "string",
+      "maxLength": 120,
+      "default": "Mirror left",
+      "description": "Marketing name supplied by the MES payload."
+    },
+    "classification": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "fields": {
+          "classificationStandard": {"type": "string"},
+          "classificationID": {"type": "string"},
+          "classificationDescription": {"type": "string", "nullable": true}
+        },
+        "required": ["classificationStandard", "classificationID"]
+      },
+      "default": [
+        {
+          "classificationStandard": "GIN 20510-21513",
+          "classificationID": "1004712",
+          "classificationDescription": "Generic standard for classification of parts in the automotive industry."
+        }
+      ]
+    },
+    "countryCode": {
+      "type": "string",
+      "default": "HUR"
+    },
+    "manufacturingDate": {
+      "type": "string",
+      "derive": {
+        "function": "date",
+        "args": ["yyyy-MM-dd'T'HH:mm:ss"]
+      }
+    },
+    "sites": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "fields": {
+          "catenaXsiteId": {
+            "type": "string",
+            "constraints": ["$FUNCTIONS.bpns"]
+          },
+          "function": {
+            "type": "enum",
+            "values": ["production", "warehouse", "logistics"],
+            "default": "production"
+          }
+        },
+        "required": ["catenaXsiteId"]
+      }
+    }
+  },
+  "MAPPINGS": {
+    "batch": {
+      "REF": "urn:samm:io.catenax.batch:3.0.0#Batch",
+      "MAP": {
+        "catenaXId": "$VARIABLES.catenaXId",
+        "localIdentifiers": "$MAPPINGS.localIdentifiers",
+        "partTypeInformation": "$MAPPINGS.partTypeInformation",
+        "manufacturingInformation": "$MAPPINGS.manufacturingInformation"
+      }
+    },
+    "localIdentifiers": {
+      "REF": "urn:samm:io.catenax.batch:3.0.0#LocalIdentifierCharacteristic",
+      "MAP": [
+        {
+          "REF": "urn:samm:io.catenax.batch:3.0.0#KeyValueList",
+          "MAP": {
+            "key": "batchId",
+            "value": "$VARIABLES.batchId"
+          }
+        }
+      ]
+    },
+    "partTypeInformation": {
+      "REF": "partTypeInformation",
+      "MAP": {
+        "manufacturerPartId": "$VARIABLES.manufacturerPartId",
+        "nameAtManufacturer": "$VARIABLES.nameAtManufacturer",
+        "partClassification": "$VARIABLES.classification"
+      }
+    },
+    "manufacturingInformation": {
+      "REF": "manufacturingInformation",
+      "MAP": {
+        "date": "$VARIABLES.manufacturingDate",
+        "country": "$VARIABLES.countryCode",
+        "sites": "$VARIABLES.sites"
+      }
+    }
+  },
+  "VALIDATION": {
+    "batch": {
+      "schema": "$SCHEMA.batch",
+      "phase": "post-map"
+    }
+  }
+}
+

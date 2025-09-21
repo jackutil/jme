@@ -1,0 +1,50 @@
+{
+  "META": {
+    "dslVersion": "v2",
+    "name": "engine-binding-test",
+    "targetAspect": "urn:example:order:1.0"
+  },
+  "ENGINE": {
+    "api": "v2",
+    "output": "$MAPPINGS.orderSummary"
+  },
+  "INPUT": {
+    "orderId": {
+      "type": "string",
+      "required": true
+    },
+    "customerId": {
+      "type": "string",
+      "required": true
+    },
+    "priority": {
+      "type": "number",
+      "default": 1.0
+    }
+  },
+  "SCHEMA": {},
+  "FUNCTIONS": {},
+  "VARIABLES": {
+    "generatedAt": {
+      "type": "string",
+      "default": "2024-01-01T00:00:00Z"
+    },
+    "referenceCode": {
+      "type": "string",
+      "default": "ORDER-REF"
+    }
+  },
+  "MAPPINGS": {
+    "orderSummary": {
+      "REF": "orderSummary",
+      "MAP": {
+        "orderId": "$INPUT.orderId",
+        "customerId": "$INPUT.customerId",
+        "priority": "$INPUT.priority",
+        "referenceCode": "$VARIABLES.referenceCode",
+        "generatedAt": "$VARIABLES.generatedAt"
+      }
+    }
+  },
+  "VALIDATION": {}
+}

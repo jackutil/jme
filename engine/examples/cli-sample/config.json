@@ -1,0 +1,48 @@
+{
+  "META": {
+    "dslVersion": "v2",
+    "name": "cli-sample",
+    "targetAspect": "urn:examples:cli"
+  },
+  "ENGINE": {
+    "api": "v2",
+    "output": "$MAPPINGS.greeting"
+  },
+  "INPUT": {
+    "tenantId": {
+      "type": "string",
+      "required": true
+    }
+  },
+  "SCHEMA": {},
+  "FUNCTIONS": {},
+  "VARIABLES": {
+    "userId": {
+      "type": "string",
+      "required": true
+    },
+    "greeting": {
+      "type": "string",
+      "default": "Hello from the Mapping Engine!"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "MAPPINGS": {
+    "greeting": {
+      "REF": "greeting",
+      "MAP": {
+        "message": "$VARIABLES.greeting",
+        "userId": "$VARIABLES.userId",
+        "active": "$VARIABLES.active",
+        "source": "$INPUT.tenantId"
+      }
+    }
+  },
+  "VALIDATION": {}
+}
+
+
+

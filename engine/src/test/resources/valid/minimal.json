@@ -1,0 +1,45 @@
+{
+  "META": {
+    "dslVersion": "v2",
+    "name": "test",
+    "targetAspect": "urn:test"
+  },
+  "ENGINE": {
+    "api": "v2",
+    "output": "$MAPPINGS.root"
+  },
+  "INPUT": {},
+  "SCHEMA": {
+    "batch": {
+      "ref": "classpath:schema/batch.json"
+    }
+  },
+  "FUNCTIONS": {
+    "uppercase": {
+      "type": "regex",
+      "pattern": "^[A-Z]+$"
+    }
+  },
+  "VARIABLES": {
+    "id": {
+      "type": "string",
+      "required": true,
+      "constraints": ["$FUNCTIONS.uppercase"]
+    }
+  },
+  "MAPPINGS": {
+    "root": {
+      "REF": "root",
+      "MAP": {
+        "id": "$VARIABLES.id"
+      }
+    }
+  },
+  "VALIDATION": {
+    "post": {
+      "schema": "$SCHEMA.batch",
+      "phase": "post-map"
+    }
+  }
+}
+

@@ -1,0 +1,45 @@
+{
+  "META": {
+    "dslVersion": "v2",
+    "name": "constants",
+    "targetAspect": "urn:test:constants"
+  },
+  "ENGINE": {
+    "api": "v2",
+    "output": "$MAPPINGS.root"
+  },
+  "INPUT": {},
+  "SCHEMA": {},
+  "FUNCTIONS": {},
+  "VARIABLES": {},
+  "MAPPINGS": {
+    "root": {
+      "REF": "root",
+      "MAP": {
+        "staticObject": {
+          "name": "inline",
+          "data": [1, 2, 3]
+        },
+        "inlineRef": "$MAPPINGS.singleUse",
+        "sharedOne": "$MAPPINGS.sharedConst",
+        "sharedTwo": "$MAPPINGS.sharedConst"
+      }
+    },
+    "singleUse": {
+      "REF": "singleUse",
+      "MAP": {
+        "name": "inline",
+        "data": [1, 2, 3]
+      }
+    },
+    "sharedConst": {
+      "REF": "sharedConst",
+      "MAP": {
+        "name": "shared",
+        "data": [true, false]
+      }
+    }
+  },
+  "VALIDATION": {}
+}
+

@@ -1,0 +1,34 @@
+{
+  "META": {
+    "dslVersion": "v2",
+    "name": "inputs",
+    "targetAspect": "urn:test:inputs"
+  },
+  "ENGINE": {
+    "api": "v2",
+    "output": "$MAPPINGS.root"
+  },
+  "INPUT": {
+    "tenantId": {
+      "type": "string",
+      "required": true
+    },
+    "batchDate": {
+      "type": "string",
+      "default": "2024-05-01"
+    }
+  },
+  "SCHEMA": {},
+  "FUNCTIONS": {},
+  "VARIABLES": {},
+  "MAPPINGS": {
+    "root": {
+      "REF": "root",
+      "MAP": {
+        "tenant": "$INPUT.tenantId",
+        "batchDate": "$INPUT.batchDate"
+      }
+    }
+  },
+  "VALIDATION": {}
+}
