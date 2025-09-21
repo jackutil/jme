@@ -21,24 +21,25 @@ This architecture makes it practical to run large mappings inside batch jobs or 
 
 ## Project layout
 
-- Engine/ - Core validator, compiler, runtime interpreter, and CLI entry point.
-- Engine/docs/ - DSL v2 specification and reference material.
-- Engine/examples/ - Sample configurations and CLI walkthroughs.
-- Engine/src/main/resources/config_v2.json - Canonical example used by tests and documentation.
+- `engine/` - Core validator, compiler, runtime interpreter, and CLI entry point.
+- `engine/docs/` - DSL v2 specification and reference material.
+- `engine/examples/` - Sample configurations and CLI walkthroughs.
+- `engine/src/main/resources/config_v2.json` - Canonical example used by tests and documentation.
+- `schema-generator/` - CLI that exports JSON Schema snapshots derived from DSL `VARIABLES` declarations.
 
 ## Getting started
 
 ### Build
 
-```Bash
+```bash
 mvn -pl engine -am package
 ```
 
-The shaded distribution lands at Engine/target/engine-1.0.0-SNAPSHOT-all.jar.
+The shaded distribution lands at `engine/target/engine-1.0.0-SNAPSHOT-all.jar`.
 
 ### Run a mapping from the CLI
 
-```Bash
+```bash
 java -jar engine/target/engine-1.0.0-SNAPSHOT-all.jar ^
   --config engine/src/main/resources/config_v2.json ^
   --mapping sample ^
@@ -48,7 +49,19 @@ java -jar engine/target/engine-1.0.0-SNAPSHOT-all.jar ^
   --pretty
 ```
 
-Use -Djme.profile.instructions=true during launch to record Jackson Flight Recorder metrics for executed opcodes.
+Use `-Djme.profile.instructions=true` during launch to record Jackson Flight Recorder metrics for executed opcodes.
+
+### Generate schema snapshots
+
+```bash
+mvn -pl schema-generator -am package
+java -jar schema-generator/target/schema-generator-1.0.0-SNAPSHOT.jar ^
+  --config engine/src/main/resources/config_v2.json ^
+  --output variables-schema.json ^
+  --pretty
+```
+
+The schema generator streams the same DSL, reuses the validator, and emits a JSON Schema document that mirrors the `VARIABLES` contract (types, nesting, enums, regex constraints, and nullability).
 
 ### Embed the engine
 
@@ -66,16 +79,17 @@ EngineBinding exposes the compiled artifact, the rendered output, and a snapshot
 
 ## DSL resources
 
-- Engine/docs/dsl-v2-spec.md - Human-readable authoring guide.
-- Engine/docs/dsl-v2-reference.md - Machine-friendly grammar reference.
-- Engine/docs/progress-context.md - Current feature set and roadmap notes.
+- `engine/docs/dsl-v2-spec.md` - Human-readable authoring guide.
+- `engine/docs/dsl-v2-reference.md` - Machine-friendly grammar reference.
+- `engine/docs/progress-context.md` - Current feature set and roadmap notes.
 
 ## Test & verification
 
-```Bash
+```bash
 mvn -pl engine test
+mvn -pl schema-generator -am test
 ```
 
-Tests cover validation fixtures, compiler regression cases, runtime integration, and builtin function behaviour.
+Tests cover validation fixtures, compiler regression cases, runtime integration, the schema exporter, and builtin function behaviour.
 
 Feel free to open an issue or pull request if you have ideas for additional streaming integrations, builtin functions, or diagnostics.

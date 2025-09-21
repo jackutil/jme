@@ -23,5 +23,6 @@
 
   <modules>
     <module>engine</module>
+    <module>schema-generator</module>
   </modules>
 </project>
