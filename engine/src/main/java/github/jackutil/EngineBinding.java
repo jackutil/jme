@@ -7,8 +7,11 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -19,6 +22,7 @@ import github.jackutil.compiler.ConfigCompiler;
 import github.jackutil.compiler.ConfigValidationException;
 import github.jackutil.compiler.ConfigValidator;
 import github.jackutil.compiler.runtime.MappingEngine;
+import github.jackutil.compiler.ir.resolved.ResolvedInput;
 
 public final class EngineBinding {
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -72,6 +76,18 @@ public final class EngineBinding {
         return compiled;
     }
 
+    public Set<String> inputFields() {
+        List<ResolvedInput> inputs = compiled.config().inputs();
+        if (inputs == null || inputs.isEmpty()) {
+            return Set.of();
+        }
+        LinkedHashSet<String> names = new LinkedHashSet<>(inputs.size());
+        for (ResolvedInput input : inputs) {
+            names.add(input.name());
+        }
+        return Set.copyOf(names);
+    }
+
     private static void validateConfig(byte[] configBytes) {
         try (InputStream in = new ByteArrayInputStream(configBytes)) {
             ConfigValidator.validate(in);
@@ -101,3 +117,4 @@ public final class EngineBinding {
         }
     }
 }
+

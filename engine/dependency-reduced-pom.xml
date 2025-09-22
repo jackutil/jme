@@ -3,8 +3,8 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>github.jackutil</groupId>
   <artifactId>engine</artifactId>
-  <name>Jack Mapping Engine</name>
-  <version>1.0.0-SNAPSHOT</version>
+  <name>Json Mapping Engine</name>
+  <version>1.0.1</version>
   <description>Streaming compiler and runtime for the Jack mapping DSL.</description>
   <url>https://github.com/jackutil/engine</url>
   <developers>
