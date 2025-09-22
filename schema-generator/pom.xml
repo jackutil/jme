@@ -24,7 +24,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.github.jackutil</groupId>
+            <groupId>github.jackutil</groupId>
             <artifactId>engine</artifactId>
             <version>${engine.version}</version>
         </dependency>
