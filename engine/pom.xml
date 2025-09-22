@@ -4,35 +4,18 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>github.jackutil</groupId>
+  <parent>
+    <groupId>github.jackutil</groupId>
+    <artifactId>jme</artifactId>
+    <version>1.0.0</version>
+  </parent>
+
   <artifactId>engine</artifactId>
-  <version>1.0.0</version>
   <packaging>jar</packaging>
 
   <name>Json Mapping Engine</name>
   <description>Streaming compiler and runtime for the Jack mapping DSL.</description>
   <url>https://github.com/jackutil/jme</url>
-
-  <licenses>
-    <license>
-      <name>MIT License</name>
-      <url>https://opensource.org/licenses/MIT</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
-
-  <distributionManagement>
-    <repository>
-      <id>github</id>
-      <name>GitHub Packages</name>
-      <url>https://maven.pkg.github.com/jackutil/jme</url>
-    </repository>
-    <snapshotRepository>
-      <id>github</id>
-      <name>GitHub Packages</name>
-      <url>https://maven.pkg.github.com/jackutil/jme</url>
-    </snapshotRepository>
-  </distributionManagement>
 
   <developers>
     <developer>

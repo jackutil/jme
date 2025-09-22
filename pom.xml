@@ -8,6 +8,10 @@
   <artifactId>jme</artifactId>
   <version>1.0.0</version>
   <packaging>pom</packaging>
+  <modules>
+    <module>engine</module>
+    <module>schema-generator</module>
+  </modules>
 
   <name>Json Mapping Engine</name>
   <description>Parent project for the Jack Mapping Engine modules.</description>
