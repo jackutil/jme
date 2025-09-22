@@ -21,8 +21,30 @@
     </license>
   </licenses>
 
-  <modules>
-    <module>engine</module>
-    <module>schema-generator</module>
-  </modules>
+  <properties>
+    <engine.version>1.0.0</engine.version>
+    <schema-generator.version>1.0.0</schema-generator.version>
+  </properties>
+
+  <repositories>
+    <repository>
+      <id>jitpack.io</id>
+      <url>https://jitpack.io</url>
+    </repository>
+  </repositories>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>com.github.jackutil</groupId>
+        <artifactId>engine</artifactId>
+        <version>${engine.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.github.jackutil</groupId>
+        <artifactId>schema-generator</artifactId>
+        <version>${schema-generator.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 </project>

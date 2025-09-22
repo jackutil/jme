@@ -9,9 +9,9 @@
   <version>1.0.0</version>
   <packaging>jar</packaging>
 
-  <name>Jack Mapping Engine</name>
+  <name>Json Mapping Engine</name>
   <description>Streaming compiler and runtime for the Jack mapping DSL.</description>
-  <url>https://github.com/jackutil/engine</url>
+  <url>https://github.com/jackutil/jme</url>
 
   <licenses>
     <license>

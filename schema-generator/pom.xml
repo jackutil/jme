@@ -24,9 +24,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>github.jackutil</groupId>
+            <groupId>com.github.jackutil</groupId>
             <artifactId>engine</artifactId>
-            <version>${project.version}</version>
+            <version>${engine.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
