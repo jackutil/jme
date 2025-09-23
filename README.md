@@ -1,70 +1,58 @@
 # JSON Mapping Engine (JME)
 
-JME is a streaming-first JSON transformation engine powered by a declarative DSL. It was built to let data engineering teams translate inbound platform payloads into SAMM aspects (or other structured targets) without hand-written code. Author a mapping once, then reuse it to validate inputs, derive fields, and emit normalized payloads in a consistent way across services and delivery channels.
+JME is a streaming-first JSON transformation engine powered by a declarative DSL. It lets teams describe mappings once and reuse them to validate inputs, derive fields, and emit normalized payloads across services.
+
+- **Streaming pipeline** – validation, compilation, and execution all operate on streams so large payloads never buffer in memory.
+- **Deterministic optimizations** – constant folding, literal pooling, and inline subgraph expansion reduce runtime work before the interpreter even runs.
+- **Composable runtime** – `EngineBinding` embeds mappings in JVM services, while the CLI executes the same configs for jobs or debugging.
+- **Tooling** – a schema generator mirrors the `VARIABLES` contract as JSON Schema; docs cover the DSL, optimizer internals, and roadmap.
 
 ## When to use JME
 
 - You need a contract-driven way to reshape JSON payloads for downstream systems or digital twins.
-- Domain experts should be able to describe mappings in a DSL rather than Java or scripting glue.
-- Transformations must enforce schema validation, derived values, and reusable functions at runtime.
-- Output payloads should stream straight to their destination (files, HTTP, Kafka) without building large in-memory objects.
+- Domain experts should author mappings in DSL files rather than Java or ad-hoc scripts.
+- Transformations must enforce schema validation, builtin functions, and reusable logic at runtime.
+- Output payloads should stream straight to files, HTTP, Kafka, etc. without materialising whole documents.
 
-## Streaming-first pipeline
+## Core Capabilities
 
-JME keeps memory use predictable by streaming every major stage:
+| Area | Highlights |
+| --- | --- |
+| Validation | Streaming section checks, pointer-rich diagnostics, schema references |
+| Compilation | Single-pass IR builder, reference resolution with cycle detection |
+| Runtime | Streaming interpreter, nested mapping reuse, input resolver, variable snapshots |
+| Optimizer | Constant folding (including deterministic builtins), literal pooling across mappings, inline subgraph expansion |
+| Tooling | CLI runner, schema generator, docs for DSL v2 and optimizer internals |
 
-1. **Streaming validation** - ConfigValidator walks the DSL file with Jackson's JsonParser, enforcing section-level rules, type guards, and identifier hygiene as bytes arrive. Nothing is materialized beyond what is necessary for diagnostics.
-2. **Streaming compilation** - StreamingCompiler performs a single-pass parse that hands tokens off to section-specific parsers. The compiler produces an intermediate representation (IR) with opcode blocks, literal tables, and reference indexes while continuing to read from the stream.
-3. **Streaming execution** - MappingEngine interprets the IR directly against a JsonGenerator, writing the target document field-by-field. Inputs, payload variables, and nested mappings resolve on demand, so outputs of any size can flow through without buffering.
+## Project Layout
 
-This architecture makes it practical to run large mappings inside batch jobs or latency-sensitive services where holding full documents in memory would be prohibitive.
+- `engine/` – validator, compiler, optimizer, runtime, CLI entrypoint.
+- `engine/docs/` – DSL specs, optimizer notes, progress snapshot, and a docs README for quick navigation.
+- `engine/examples/` – sample configs and CLI walkthroughs.
+- `schema-generator/` – CLI that exports JSON Schema derived from `VARIABLES` declarations.
 
-## Project layout
-
-- `engine/` - Core validator, compiler, runtime interpreter, and CLI entry point.
-- `engine/docs/` - DSL v2 specification and reference material.
-- `engine/examples/` - Sample configurations and CLI walkthroughs.
-- `engine/src/main/resources/config_v2.json` - Canonical example used by tests and documentation.
-- `schema-generator/` - CLI that exports JSON Schema snapshots derived from DSL `VARIABLES` declarations.
-
-## Getting started
+## Getting Started
 
 ### Build
-
 ```bash
 mvn -pl engine -am package
 ```
+The shaded distribution lands at `engine/target/engine-1.0.1-SNAPSHOT-all.jar`.
 
-The shaded distribution lands at `engine/target/engine-1.0.0-SNAPSHOT-all.jar`.
-
-### Run a mapping from the CLI
-
+### Run a Mapping
 ```bash
-java -jar engine/target/engine-1.0.0-SNAPSHOT-all.jar ^
-  --config engine/src/main/resources/config_v2.json ^
-  --mapping sample ^
-  --input examples/cli-sample/input.json ^
-  --payload examples/cli-sample/payload.json ^
-  --output out.json ^
-  --pretty
+java -jar engine/target/engine-1.0.1-SNAPSHOT-all.jar   --config engine/src/main/resources/config_v2.json   --mapping sample   --input examples/cli-sample/input.json   --payload examples/cli-sample/payload.json   --output out.json   --pretty
 ```
+Use `-Djme.profile.instructions=true` to emit Jackson Flight Recorder metrics for executed opcodes.
 
-Use `-Djme.profile.instructions=true` during launch to record Jackson Flight Recorder metrics for executed opcodes.
-
-### Generate schema snapshots
-
+### Generate a Schema
 ```bash
 mvn -pl schema-generator -am package
-java -jar schema-generator/target/schema-generator-1.0.0-SNAPSHOT.jar ^
-  --config engine/src/main/resources/config_v2.json ^
-  --output variables-schema.json ^
-  --pretty
+java -jar schema-generator/target/schema-generator-1.0.1-SNAPSHOT.jar   --config engine/src/main/resources/config_v2.json   --output variables-schema.json   --pretty
 ```
+The generator streams the DSL, reuses the validator, and emits JSON Schema that mirrors the variable contract.
 
-The schema generator streams the same DSL, reuses the validator, and emits a JSON Schema document that mirrors the `VARIABLES` contract (types, nesting, enums, regex constraints, and nullability).
-
-### Embed the engine
-
+### Embed the Engine
 ```java
 EngineBinding binding = EngineBinding.fromPath(Path.of("config.json"));
 EngineBinding.ExecutionResult result = binding.execute(
@@ -74,22 +62,35 @@ EngineBinding.ExecutionResult result = binding.execute(
 );
 System.out.println(result.prettyOutput());
 ```
+`EngineBinding` exposes the compiled program, rendered output, and variable snapshot for auditing.
 
-EngineBinding exposes the compiled artifact, the rendered output, and a snapshot of runtime variables for auditing or debugging.
+## Developer Utilities
 
-## DSL resources
+Common host-side helpers when working with `EngineBinding`:
 
-- `engine/docs/dsl-v2-spec.md` - Human-readable authoring guide.
-- `engine/docs/dsl-v2-reference.md` - Machine-friendly grammar reference.
-- `engine/docs/progress-context.md` - Current feature set and roadmap notes.
+- Config loader that stitches environment-specific overrides before compilation.
+- Input/payload normaliser to coerce incoming requests to expected types.
+- Default filler that applies tenant/business rules before the engine runs.
+- Contract validator for friendly preflight errors.
+- Result post-processor that wraps the engine output with metadata.
+- Diagnostics collector to log execution time, folded literals, or variable snapshots.
 
-## Test & verification
+## Documentation
+
+Key references live under `engine/docs/`:
+
+- `dsl-v2-spec.md` – human-friendly DSL overview.
+- `dsl-v2-reference.md` – grammar and keyword reference.
+- `runtime-optimizations.md` – optimizer pipeline, builtin folding, literal pooling, and inlining heuristics.
+- `progress-context.md` – feature snapshot and roadmap notes.
+- `README.md` (in `engine/docs/`) – quick index of available documents.
+
+## Test & Verification
 
 ```bash
 mvn -pl engine test
 mvn -pl schema-generator -am test
 ```
+Fixtures cover validation, compiler regressions, optimizer behaviour, and runtime integration (including advanced mapping scenarios).
 
-Tests cover validation fixtures, compiler regression cases, runtime integration, the schema exporter, and builtin function behaviour.
-
-Feel free to open an issue or pull request if you have ideas for additional streaming integrations, builtin functions, or diagnostics.
+Have an idea for new builtin functions, diagnostics, or integrations? Issues and PRs are welcome.
