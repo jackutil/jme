@@ -6,7 +6,7 @@
 
   <groupId>github.jackutil</groupId>
   <artifactId>jme</artifactId>
-  <version>1.0.1</version>
+  <version>1.0.2</version>
   <packaging>pom</packaging>
   <modules>
     <module>engine</module>
@@ -26,8 +26,8 @@
   </licenses>
 
   <properties>
-    <engine.version>1.0.1</engine.version>
-    <schema-generator.version>1.0.0</schema-generator.version>
+    <engine.version>1.0.2</engine.version>
+    <schema-generator.version>1.0.2</schema-generator.version>
   </properties>
 
   <distributionManagement>
