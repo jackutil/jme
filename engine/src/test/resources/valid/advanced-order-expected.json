@@ -1,0 +1,22 @@
+{
+  "header": {
+    "tenant": "TENANT-001",
+    "region": "NA",
+    "orderId": "ORD-42",
+    "orderLabel": "ORD-42",
+    "paddedOrder": "00042"
+  },
+  "customer": {
+    "name": "Acme Corp",
+    "segment": "premium",
+    "country": "DE"
+  },
+  "items": [
+    { "sku": "ABC-001", "quantity": 2 },
+    { "sku": "XYZ-777", "quantity": 5 }
+  ],
+  "summary": {
+    "lineCount": 2,
+    "staticTotal": 42
+  }
+}

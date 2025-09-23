@@ -1,0 +1,13 @@
+{
+  "orderId": "ORD-42",
+  "lineCount": 2,
+  "customer": {
+    "name": "Acme Corp",
+    "segment": "premium",
+    "country": "DE"
+  },
+  "lineItems": [
+    { "sku": "ABC-001", "quantity": 2 },
+    { "sku": "XYZ-777", "quantity": 5 }
+  ]
+}

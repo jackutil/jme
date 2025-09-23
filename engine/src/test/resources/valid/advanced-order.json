@@ -1,0 +1,121 @@
+{
+  "META": {
+    "dslVersion": "v2",
+    "name": "advanced-order",
+    "targetAspect": "urn:test:advanced"
+  },
+  "ENGINE": {
+    "api": "v2",
+    "output": "$MAPPINGS.root"
+  },
+  "INPUT": {
+    "tenantId": {
+      "type": "string",
+      "required": true
+    },
+    "region": {
+      "type": "string",
+      "default": "EU"
+    }
+  },
+  "SCHEMA": {},
+  "FUNCTIONS": {
+    "upper": { "type": "builtin", "fn": "uppercase" },
+    "concat": { "type": "builtin", "fn": "concat" },
+    "pad": { "type": "builtin", "fn": "pad_left" },
+    "sum": { "type": "builtin", "fn": "add" }
+  },
+  "VARIABLES": {
+    "orderId": {
+      "type": "string",
+      "required": true
+    },
+    "orderLabel": {
+      "type": "string",
+      "derive": {
+        "function": "$FUNCTIONS.upper",
+        "args": ["ord-42"]
+      }
+    },
+    "paddedOrder": {
+      "type": "string",
+      "derive": {
+        "function": "$FUNCTIONS.pad",
+        "args": ["42", 5, "0"]
+      }
+    },
+    "staticTotal": {
+      "type": "number",
+      "derive": {
+        "function": "$FUNCTIONS.sum",
+        "args": [40, 2]
+      }
+    },
+    "lineCount": {
+      "type": "integer",
+      "required": true
+    },
+    "customer": {
+      "type": "object",
+      "fields": {
+        "name": {
+          "type": "string",
+          "required": true
+        },
+        "segment": {
+          "type": "string",
+          "default": "standard"
+        },
+        "country": {
+          "type": "string",
+          "default": "DE"
+        }
+      }
+    },
+    "lineItems": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "fields": {
+          "sku": {
+            "type": "string",
+            "required": true
+          },
+          "quantity": {
+            "type": "integer",
+            "required": true
+          }
+        }
+      }
+    }
+  },
+  "MAPPINGS": {
+    "root": {
+      "REF": "Root",
+      "MAP": {
+        "header": "$MAPPINGS.header",
+        "customer": "$VARIABLES.customer",
+        "items": "$VARIABLES.lineItems",
+        "summary": "$MAPPINGS.summary"
+      }
+    },
+    "header": {
+      "REF": "Header",
+      "MAP": {
+        "tenant": "$INPUT.tenantId",
+        "region": "$INPUT.region",
+        "orderId": "$VARIABLES.orderId",
+        "orderLabel": "$VARIABLES.orderLabel",
+        "paddedOrder": "$VARIABLES.paddedOrder"
+      }
+    },
+    "summary": {
+      "REF": "Summary",
+      "MAP": {
+        "lineCount": "$VARIABLES.lineCount",
+        "staticTotal": "$VARIABLES.staticTotal"
+      }
+    }
+  },
+  "VALIDATION": {}
+}

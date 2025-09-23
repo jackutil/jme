@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -59,6 +60,17 @@ public class MappingEngineTest {
         assertEquals("BOX", node.get("label").asText());
         assertEquals(2, node.get("items").size());
         assertEquals("foo", node.get("items").get(0).get("name").asText());
+    }
+
+    @Test
+    public void executesAdvancedOrderMapping() throws Exception {
+        CompiledMapping compiled = compile("valid/advanced-order.json");
+        MappingEngine engine = new MappingEngine(compiled);
+        Map<String, Object> inputs = readJsonMap("valid/advanced-order-input.json");
+        Map<String, Object> payload = readJsonMap("valid/advanced-order-payload.json");
+        JsonNode actual = executeToJson(engine, "root", inputs, payload);
+        JsonNode expected = readJsonNode("valid/advanced-order-expected.json");
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -124,6 +136,18 @@ public class MappingEngineTest {
 
     private JsonNode executeToJson(MappingEngine engine, String mapping, Map<String, Object> payload) throws Exception {
         return executeToJson(engine, mapping, Map.of(), payload);
+    }
+
+    private Map<String, Object> readJsonMap(String resourceName) throws Exception {
+        try (InputStream in = resource(resourceName)) {
+            return objectMapper.readValue(in, new TypeReference<Map<String, Object>>() { });
+        }
+    }
+
+    private JsonNode readJsonNode(String resourceName) throws Exception {
+        try (InputStream in = resource(resourceName)) {
+            return objectMapper.readTree(in);
+        }
     }
 
     private CompiledMapping compile(String resource) throws Exception {
