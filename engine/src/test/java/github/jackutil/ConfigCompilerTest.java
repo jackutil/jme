@@ -217,8 +217,7 @@ public class ConfigCompilerTest {
         }
     }
 
-        @SuppressWarnings("unchecked")
-    private Map<?, ?> castToMap(Object value) {
+        private Map<?, ?> castToMap(Object value) {
         if (!(value instanceof Map<?, ?> map)) {
             throw new AssertionError("Expected map literal but got: " + value);
         }
