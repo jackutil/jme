@@ -6,8 +6,11 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertSame;
 
 import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
 
 import org.junit.Test;
 
@@ -149,6 +152,31 @@ public class ConfigCompilerTest {
     }
 
     @Test
+    public void poolsLiteralsAcrossMappings() throws Exception {
+        try (InputStream in = resource("valid/literal-pool.json")) {
+            CompiledMapping mapping = ConfigCompiler.compile(in);
+            ResolvedConfig config = mapping.config();
+            InstructionProgram program = mapping.program().program();
+
+            ResolvedMapping root = mapping(config, "root");
+            ResolvedMapping support = mapping(config, "support");
+
+            Map<?, ?> rootLiteral = castToMap(program.literals().get(program.blocks().get(root.id()).operands()[0][0]));
+            Map<?, ?> supportLiteral = castToMap(program.literals().get(program.blocks().get(support.id()).operands()[0][0]));
+
+            Map<?, ?> firstLiteral = castToMap(rootLiteral.get("first"));
+            Map<?, ?> secondLiteral = castToMap(rootLiteral.get("second"));
+            assertSame("Support literal should back first field", supportLiteral, firstLiteral);
+            assertSame("Support literal should back second field", supportLiteral, secondLiteral);
+
+            List<?> tags = castToList(supportLiteral.get("tags"));
+            assertEquals(2, tags.size());
+            assertEquals("alpha", tags.get(0));
+            assertEquals("beta", tags.get(1));
+        }
+    }
+
+    @Test
     public void inlinesSingleUseMappings() throws Exception {
         try (InputStream in = resource("valid/inline.json")) {
             CompiledMapping mapping = ConfigCompiler.compile(in);
@@ -187,6 +215,21 @@ public class ConfigCompilerTest {
             InstructionBlock detailBlock = program.blocks().get(detail.id());
             assertEquals(OpCode.BEGIN_OBJECT, detailBlock.opcodes()[0]);
         }
+    }
+
+        @SuppressWarnings("unchecked")
+    private Map<?, ?> castToMap(Object value) {
+        if (!(value instanceof Map<?, ?> map)) {
+            throw new AssertionError("Expected map literal but got: " + value);
+        }
+        return map;
+    }
+
+    private List<?> castToList(Object value) {
+        if (!(value instanceof List<?> list)) {
+            throw new AssertionError("Expected list literal but got: " + value);
+        }
+        return list;
     }
 
     private ResolvedMapping mapping(ResolvedConfig config, String name) {

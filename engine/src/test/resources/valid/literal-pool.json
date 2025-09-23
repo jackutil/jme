@@ -1,0 +1,40 @@
+{
+  "META": {
+    "dslVersion": "v2",
+    "name": "literal-pool",
+    "targetAspect": "urn:test:literalpool"
+  },
+  "ENGINE": {
+    "api": "v2",
+    "output": "$MAPPINGS.root"
+  },
+  "INPUT": {},
+  "SCHEMA": {},
+  "FUNCTIONS": {},
+  "VARIABLES": {
+    "id": {
+      "type": "string",
+      "required": true
+    }
+  },
+  "MAPPINGS": {
+    "root": {
+      "REF": "Root",
+      "MAP": {
+        "first": {
+          "foo": "bar",
+          "tags": ["alpha", "beta"]
+        },
+        "second": "$MAPPINGS.support"
+      }
+    },
+    "support": {
+      "REF": "Support",
+      "MAP": {
+        "foo": "bar",
+        "tags": ["alpha", "beta"]
+      }
+    }
+  },
+  "VALIDATION": {}
+}

@@ -36,7 +36,6 @@ public final class InstructionOptimizer {
         private final Map<Integer, Integer> referenceCounts = new HashMap<>();
         private final Map<Integer, OptimizationResult> optimizedMappings = new HashMap<>();
         private final Set<Integer> inProgress = new HashSet<>();
-        private final Map<Object, ResolvedMapNode.LiteralNode> literalPool = new HashMap<>();
         private final Set<Integer> protectedMappings = new HashSet<>();
 
         Optimizer(ResolvedConfig config) {
@@ -58,7 +57,7 @@ public final class InstructionOptimizer {
                 OptimizationResult result = optimizeMapping(mapping.id());
                 optimized.add(new ResolvedMapping(mapping.id(), mapping.name(), mapping.ref(), result.node()));
             }
-            return new ResolvedConfig(
+            ResolvedConfig folded = new ResolvedConfig(
                 config.meta(),
                 config.engine(),
                 config.schemas(),
@@ -68,6 +67,7 @@ public final class InstructionOptimizer {
                 List.copyOf(optimized),
                 config.validations()
             );
+            return LiteralPooler.poolLiterals(folded);
         }
 
         private void countReferences(ResolvedMapNode node) {
@@ -137,7 +137,7 @@ public final class InstructionOptimizer {
 
         private OptimizationResult optimizeNode(ResolvedMapNode node) {
             if (node instanceof ResolvedMapNode.LiteralNode literalNode) {
-                return constantLiteral(literalNode.value());
+                return OptimizationResult.constant(literalNode, literalNode.value());
             }
             if (node instanceof ResolvedMapNode.VariableRefNode) {
                 return OptimizationResult.nonConstant(node);
@@ -200,11 +200,12 @@ public final class InstructionOptimizer {
                 }
             }
             if (allConstant) {
-                LinkedHashMap<String, Object> folded = new LinkedHashMap<>();
+                Map<String, Object> folded = new LinkedHashMap<>();
                 for (int i = 0; i < fields.size(); i++) {
                     folded.put(fields.get(i).name(), constants.get(i));
                 }
-                return constantLiteral(Collections.unmodifiableMap(folded));
+                Map<String, Object> immutable = Collections.unmodifiableMap(folded);
+                return OptimizationResult.constant(new ResolvedMapNode.LiteralNode(immutable), immutable);
             }
             if (!changed) {
                 return OptimizationResult.nonConstant(objectNode);
@@ -232,36 +233,13 @@ public final class InstructionOptimizer {
                 }
             }
             if (allConstant) {
-                return constantLiteral(List.copyOf(constants));
+                List<Object> immutable = List.copyOf(constants);
+                return OptimizationResult.constant(new ResolvedMapNode.LiteralNode(immutable), immutable);
             }
             if (!changed) {
                 return OptimizationResult.nonConstant(arrayNode);
             }
             return OptimizationResult.nonConstant(new ResolvedMapNode.ArrayNode(List.copyOf(optimizedElements)));
-        }
-
-        private OptimizationResult constantLiteral(Object value) {
-            Object canonical = canonicalizeValue(value);
-            ResolvedMapNode.LiteralNode literal = literalPool.computeIfAbsent(canonical, key -> new ResolvedMapNode.LiteralNode(key));
-            return OptimizationResult.constant(literal, canonical);
-        }
-
-        private Object canonicalizeValue(Object value) {
-            if (value instanceof List<?> list) {
-                List<Object> canonical = new ArrayList<>(list.size());
-                for (Object element : list) {
-                    canonical.add(canonicalizeValue(element));
-                }
-                return List.copyOf(canonical);
-            }
-            if (value instanceof Map<?, ?> map) {
-                LinkedHashMap<Object, Object> canonical = new LinkedHashMap<>();
-                for (Map.Entry<?, ?> entry : map.entrySet()) {
-                    canonical.put(entry.getKey(), canonicalizeValue(entry.getValue()));
-                }
-                return Collections.unmodifiableMap(canonical);
-            }
-            return value;
         }
 
         private ResolvedMapNode cloneNode(ResolvedMapNode node) {
