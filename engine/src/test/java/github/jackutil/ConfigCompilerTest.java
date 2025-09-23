@@ -177,6 +177,24 @@ public class ConfigCompilerTest {
     }
 
     @Test
+    public void foldsDeterministicBuiltinDerives() throws Exception {
+        try (InputStream in = resource("valid/builtin-folding.json")) {
+            CompiledMapping mapping = ConfigCompiler.compile(in);
+            ResolvedConfig config = mapping.config();
+
+            ResolvedVariable label = variable(config, "label");
+            assertNull(label.deriveFunctionId());
+            assertEquals(List.of(), label.deriveArgs());
+            assertEquals("BOX", label.defaultValue());
+
+            ResolvedVariable total = variable(config, "total");
+            assertNull(total.deriveFunctionId());
+            assertEquals(List.of(), total.deriveArgs());
+            assertEquals(3L, total.defaultValue());
+        }
+    }
+
+    @Test
     public void inlinesSingleUseMappings() throws Exception {
         try (InputStream in = resource("valid/inline.json")) {
             CompiledMapping mapping = ConfigCompiler.compile(in);
@@ -217,7 +235,7 @@ public class ConfigCompilerTest {
         }
     }
 
-        private Map<?, ?> castToMap(Object value) {
+    private Map<?, ?> castToMap(Object value) {
         if (!(value instanceof Map<?, ?> map)) {
             throw new AssertionError("Expected map literal but got: " + value);
         }
@@ -229,6 +247,13 @@ public class ConfigCompilerTest {
             throw new AssertionError("Expected list literal but got: " + value);
         }
         return list;
+    }
+
+    private ResolvedVariable variable(ResolvedConfig config, String name) {
+        return config.variables().stream()
+            .filter(v -> v.name().equals(name))
+            .findFirst()
+            .orElseThrow(() -> new AssertionError("Missing variable: " + name));
     }
 
     private ResolvedMapping mapping(ResolvedConfig config, String name) {

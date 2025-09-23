@@ -4,7 +4,7 @@
 - **DSL v2 spec + validation**: Human/machine docs, streaming `ConfigValidator`, and fixture-based tests covering required sections, identifiers, type expectations, and schema references.
 - **Compiler pipeline**: Streaming parse builds IR, `ReferenceResolver` handles functions/variables/mappings/schemas with cycle detection, and `InstructionCompiler` emits opcode streams per mapping.
 - **Runtime engine**: `MappingEngine` executes directly to a `JsonGenerator`, supports nested mappings/arrays, required/default/derived variables, constraint enforcement, and the extended builtin catalog (uuid/date/numeric/string/lookup/math helpers).
-- **Instruction optimizer**: reference counting, literal pooling, constant folding, and inline subgraph expansion trim interpreter recursion for single-use mappings.
+- **Instruction optimizer**: reference counting, literal pooling, compile-time builtin folding, and inline subgraph expansion trim interpreter recursion and erase redundant runtime derives.
 - **Input bindings**: DSL `INPUT` section declares host-provided values, wiring through `InputResolver`, `$INPUT.*` references in mappings, and dedicated input maps for CLI/runtime entry points.
 - **File-based CLI runner**: `Main` now accepts `--config`, `--mapping`, optional `--input`/`--payload`/`--output`, supports `--pretty`, and respects `-Djme.profile.instructions=true` for JFR metrics when streaming results.
 - **Structured diagnostics**: Errors surface as `MappingException` with code/message/pointer from compiler, resolver, and runtime (missing references, type errors, constraint failures, unknown mappings, etc.).

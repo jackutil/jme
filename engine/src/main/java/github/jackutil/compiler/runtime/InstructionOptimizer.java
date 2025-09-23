@@ -11,9 +11,12 @@ import java.util.Objects;
 import java.util.Set;
 
 import github.jackutil.compiler.ir.EngineConfig;
+import github.jackutil.compiler.ir.FunctionDef;
+import github.jackutil.compiler.ir.enums.FunctionKind;
 import github.jackutil.compiler.ir.resolved.ResolvedConfig;
 import github.jackutil.compiler.ir.resolved.ResolvedMapNode;
 import github.jackutil.compiler.ir.resolved.ResolvedMapping;
+import github.jackutil.compiler.ir.resolved.ResolvedVariable;
 
 /**
  * Performs simple IR optimizations before bytecode emission to reduce runtime work.
@@ -21,6 +24,21 @@ import github.jackutil.compiler.ir.resolved.ResolvedMapping;
 public final class InstructionOptimizer {
     private static final int INLINE_MAX_REFERENCE_COUNT = 1;
     private static final int INLINE_MAX_NODE_COUNT = 128;
+    private static final Set<String> FOLDABLE_BUILTINS = Set.of(
+        "uppercase",
+        "lowercase",
+        "trim",
+        "concat",
+        "pad_left",
+        "pad_right",
+        "add",
+        "subtract",
+        "multiply",
+        "divide",
+        "min",
+        "max",
+        "abs"
+    );
 
     private InstructionOptimizer() {
     }
@@ -35,6 +53,7 @@ public final class InstructionOptimizer {
         private final Map<String, Integer> mappingIdByName = new HashMap<>();
         private final Map<Integer, Integer> referenceCounts = new HashMap<>();
         private final Map<Integer, OptimizationResult> optimizedMappings = new HashMap<>();
+        private final Map<Integer, FunctionDef> functionById = new HashMap<>();
         private final Set<Integer> inProgress = new HashSet<>();
         private final Set<Integer> protectedMappings = new HashSet<>();
 
@@ -48,14 +67,18 @@ public final class InstructionOptimizer {
             for (ResolvedMapping mapping : config.mappings()) {
                 countReferences(mapping.root());
             }
+            for (FunctionDef function : config.functions()) {
+                functionById.put(function.id(), function);
+            }
             initProtectedMappings();
         }
 
         ResolvedConfig optimize() {
-            List<ResolvedMapping> optimized = new ArrayList<>(config.mappings().size());
+            List<ResolvedVariable> optimizedVariables = optimizeVariables();
+            List<ResolvedMapping> optimizedMappings = new ArrayList<>(config.mappings().size());
             for (ResolvedMapping mapping : config.mappings()) {
                 OptimizationResult result = optimizeMapping(mapping.id());
-                optimized.add(new ResolvedMapping(mapping.id(), mapping.name(), mapping.ref(), result.node()));
+                optimizedMappings.add(new ResolvedMapping(mapping.id(), mapping.name(), mapping.ref(), result.node()));
             }
             ResolvedConfig folded = new ResolvedConfig(
                 config.meta(),
@@ -63,11 +86,102 @@ public final class InstructionOptimizer {
                 config.schemas(),
                 config.functions(),
                 config.inputs(),
-                config.variables(),
-                List.copyOf(optimized),
+                List.copyOf(optimizedVariables),
+                List.copyOf(optimizedMappings),
                 config.validations()
             );
             return LiteralPooler.poolLiterals(folded);
+        }
+
+        private List<ResolvedVariable> optimizeVariables() {
+            List<ResolvedVariable> optimized = new ArrayList<>(config.variables().size());
+            for (ResolvedVariable variable : config.variables()) {
+                optimized.add(foldVariable(variable));
+            }
+            return optimized;
+        }
+
+        private ResolvedVariable foldVariable(ResolvedVariable variable) {
+            if (variable.defaultValue() != null) {
+                return variable;
+            }
+            Integer functionId = variable.deriveFunctionId();
+            if (functionId == null) {
+                return variable;
+            }
+            FunctionDef function = functionById.get(functionId);
+            if (function == null || function.kind() != FunctionKind.BUILTIN) {
+                return variable;
+            }
+            String builtinName = String.valueOf(function.payload());
+            if (!FOLDABLE_BUILTINS.contains(builtinName)) {
+                return variable;
+            }
+            List<Object> callArgs = variable.deriveArgs();
+            if (!argsAreConstant(callArgs) || !argsAreConstant(function.args())) {
+                return variable;
+            }
+            try {
+                Object folded = new BuiltinFunctionRuntime(function).derive(callArgs);
+                return new ResolvedVariable(
+                    variable.id(),
+                    variable.name(),
+                    variable.type(),
+                    variable.required(),
+                    variable.nullable(),
+                    variable.constraintFunctionIds(),
+                    null,
+                    List.of(),
+                    folded
+                );
+            } catch (RuntimeException ex) {
+                return variable;
+            }
+        }
+
+        private boolean argsAreConstant(List<?> args) {
+            if (args == null || args.isEmpty()) {
+                return true;
+            }
+            for (Object arg : args) {
+                if (!isConstantValue(arg)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private boolean isConstantValue(Object value) {
+            if (value == null) {
+                return true;
+            }
+            if (value instanceof Number || value instanceof Boolean) {
+                return true;
+            }
+            if (value instanceof String s) {
+                return !(s.startsWith("$VARIABLES.")
+                    || s.startsWith("$INPUT.")
+                    || s.startsWith("$PAYLOAD.")
+                    || s.startsWith("$MAPPINGS.")
+                    || s.startsWith("$FUNCTIONS."));
+            }
+            if (value instanceof List<?> list) {
+                for (Object element : list) {
+                    if (!isConstantValue(element)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            if (value instanceof Map<?, ?> map) {
+                for (Object element : map.values()) {
+                    if (!isConstantValue(element)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            return false;
         }
 
         private void countReferences(ResolvedMapNode node) {

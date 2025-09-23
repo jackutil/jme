@@ -1,0 +1,43 @@
+{
+  "META": {
+    "dslVersion": "v2",
+    "name": "builtin-folding",
+    "targetAspect": "urn:test:builtin"
+  },
+  "ENGINE": {
+    "api": "v2",
+    "output": "$MAPPINGS.root"
+  },
+  "INPUT": {},
+  "SCHEMA": {},
+  "FUNCTIONS": {
+    "toUpper": { "type": "builtin", "fn": "uppercase" },
+    "sum": { "type": "builtin", "fn": "add" }
+  },
+  "VARIABLES": {
+    "label": {
+      "type": "string",
+      "derive": {
+        "function": "$FUNCTIONS.toUpper",
+        "args": ["box"]
+      }
+    },
+    "total": {
+      "type": "number",
+      "derive": {
+        "function": "$FUNCTIONS.sum",
+        "args": [1, 2]
+      }
+    }
+  },
+  "MAPPINGS": {
+    "root": {
+      "REF": "Root",
+      "MAP": {
+        "label": "$VARIABLES.label",
+        "total": "$VARIABLES.total"
+      }
+    }
+  },
+  "VALIDATION": {}
+}

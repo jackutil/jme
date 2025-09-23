@@ -5,9 +5,18 @@ This document captures the optimizer and interpreter mechanics that shape JME ru
 ## Instruction Optimizer Pipeline
 
 1. **Reference counting** - every `ResolvedMapNode.MappingRefNode` increments a counter for its target mapping. The counts drive inline heuristics and prevent accidental removal of shared subtrees.
-2. **Constant folding** - nested literal/object/array nodes that resolve to static values are collapsed into shared literal objects. The canonical literal pool ensures identical structures reuse the same `ResolvedMapNode.LiteralNode` instance.
-3. **Inline subgraph expansion** - single-use mapping references are cloned into the caller when they meet the heuristics described below. This is the newest addition and removes interpreter recursion for hot, repeated structures.
+2. **Constant folding** - nested literal/object/array nodes that resolve to static values are collapsed into shared literal objects. Compile-time evaluation now also runs deterministic builtin derives (string casing, arithmetic, padding, min/max, etc.) when all arguments are literals, baking the result straight into variable defaults.
+3. **Literal pooling** - after folding, identical literal values across mappings share a single `ResolvedMapNode.LiteralNode` so the emitted program references one canonical entry.
+4. **Inline subgraph expansion** - single-use mapping references are cloned into the caller when they meet the heuristics described below, removing interpreter recursion for hot, repeated structures.
 
+
+## Builtin Folding
+
+Variable derives that call deterministic builtins (uppercase/lowercase/trim, concat, padding, add/subtract/multiply/divide, min/max, abs) are evaluated during optimization when every argument is a literal. The derive metadata is cleared and the folded value is stored as the variable default so runtime never invokes the builtin. Non-deterministic helpers (date/uuid/random) remain untouched.
+
+## Literal Pooling
+
+Literal pooling happens after folding to capture both hand-authored literals and builtin outputs. Nested maps and arrays are canonicalised so repeated structures reuse a single node, keeping the instruction literal table compact and preserving object identity checks in tests.
 ## Inline Subgraph Heuristics
 
 Inlining trades compiler work for runtime savings. The optimizer applies the following checks before rewriting a `MappingRefNode`:
@@ -30,6 +39,7 @@ The `InstructionEmitter` is unaware of the rewrite and simply walks the updated 
 ## Diagnostics and Tests
 
 - `ConfigCompilerTest#inlinesSingleUseMappings` asserts that detail mappings inline while shared ones remain referenced.
+- `ConfigCompilerTest#poolsLiteralsAcrossMappings` and `ConfigCompilerTest#foldsDeterministicBuiltinDerives` lock in literal pooling and builtin folding outcomes.
 - When debugging inline behaviour, turn on the instruction metrics profiling flag (`-Djme.profile.instructions=true`) to compare opcode counts before and after optimizer tweaks.
 
 ## Extending the Optimizer
