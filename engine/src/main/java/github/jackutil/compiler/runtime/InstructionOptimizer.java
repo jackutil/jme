@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import github.jackutil.compiler.ir.EngineConfig;
 import github.jackutil.compiler.ir.resolved.ResolvedConfig;
 import github.jackutil.compiler.ir.resolved.ResolvedMapNode;
 import github.jackutil.compiler.ir.resolved.ResolvedMapping;
@@ -18,6 +19,9 @@ import github.jackutil.compiler.ir.resolved.ResolvedMapping;
  * Performs simple IR optimizations before bytecode emission to reduce runtime work.
  */
 public final class InstructionOptimizer {
+    private static final int INLINE_MAX_REFERENCE_COUNT = 1;
+    private static final int INLINE_MAX_NODE_COUNT = 128;
+
     private InstructionOptimizer() {
     }
 
@@ -28,20 +32,24 @@ public final class InstructionOptimizer {
     private static final class Optimizer {
         private final ResolvedConfig config;
         private final Map<Integer, ResolvedMapping> mappingById = new HashMap<>();
+        private final Map<String, Integer> mappingIdByName = new HashMap<>();
         private final Map<Integer, Integer> referenceCounts = new HashMap<>();
         private final Map<Integer, OptimizationResult> optimizedMappings = new HashMap<>();
         private final Set<Integer> inProgress = new HashSet<>();
         private final Map<Object, ResolvedMapNode.LiteralNode> literalPool = new HashMap<>();
+        private final Set<Integer> protectedMappings = new HashSet<>();
 
         Optimizer(ResolvedConfig config) {
             this.config = config;
             for (ResolvedMapping mapping : config.mappings()) {
                 mappingById.put(mapping.id(), mapping);
+                mappingIdByName.put(mapping.name(), mapping.id());
                 referenceCounts.put(mapping.id(), 0);
             }
             for (ResolvedMapping mapping : config.mappings()) {
                 countReferences(mapping.root());
             }
+            initProtectedMappings();
         }
 
         ResolvedConfig optimize() {
@@ -80,6 +88,32 @@ public final class InstructionOptimizer {
             }
         }
 
+        private void initProtectedMappings() {
+            EngineConfig engineConfig = config.engine();
+            if (engineConfig == null) {
+                return;
+            }
+            registerProtectedMapping(engineConfig.outputRef());
+        }
+
+        private void registerProtectedMapping(String pointer) {
+            if (pointer == null || pointer.isBlank()) {
+                return;
+            }
+            String mappingName = stripPrefix(pointer.trim(), "$MAPPINGS.");
+            Integer id = mappingIdByName.get(mappingName);
+            if (id != null) {
+                protectedMappings.add(id);
+            }
+        }
+
+        private String stripPrefix(String value, String prefix) {
+            if (value.startsWith(prefix)) {
+                return value.substring(prefix.length());
+            }
+            return value;
+        }
+
         private OptimizationResult optimizeMapping(int mappingId) {
             OptimizationResult cached = optimizedMappings.get(mappingId);
             if (cached != null) {
@@ -116,6 +150,12 @@ public final class InstructionOptimizer {
                     // Safe to inline a constant mapping referenced only once.
                     return target;
                 }
+                if (shouldInlineMapping(targetId, target.node(), refs)) {
+                    return OptimizationResult.nonConstant(cloneNode(target.node()));
+                }
+                return OptimizationResult.nonConstant(node);
+            }
+            if (node instanceof ResolvedMapNode.InputRefNode) {
                 return OptimizationResult.nonConstant(node);
             }
             if (node instanceof ResolvedMapNode.ObjectNode objectNode) {
@@ -125,6 +165,19 @@ public final class InstructionOptimizer {
                 return optimizeArray(arrayNode);
             }
             return OptimizationResult.nonConstant(node);
+        }
+
+        private boolean shouldInlineMapping(int mappingId, ResolvedMapNode targetNode, int references) {
+            if (protectedMappings.contains(mappingId)) {
+                return false;
+            }
+            if (references > INLINE_MAX_REFERENCE_COUNT) {
+                return false;
+            }
+            if (targetNode instanceof ResolvedMapNode.MappingRefNode) {
+                return false;
+            }
+            return nodeSize(targetNode) <= INLINE_MAX_NODE_COUNT;
         }
 
         private OptimizationResult optimizeObject(ResolvedMapNode.ObjectNode objectNode) {
@@ -210,6 +263,51 @@ public final class InstructionOptimizer {
             }
             return value;
         }
+
+        private ResolvedMapNode cloneNode(ResolvedMapNode node) {
+            if (node instanceof ResolvedMapNode.ObjectNode objectNode) {
+                List<ResolvedMapNode.ObjectNode.Field> clonedFields = new ArrayList<>(objectNode.fields().size());
+                for (ResolvedMapNode.ObjectNode.Field field : objectNode.fields()) {
+                    clonedFields.add(new ResolvedMapNode.ObjectNode.Field(field.name(), cloneNode(field.value())));
+                }
+                return new ResolvedMapNode.ObjectNode(List.copyOf(clonedFields));
+            }
+            if (node instanceof ResolvedMapNode.ArrayNode arrayNode) {
+                List<ResolvedMapNode> clonedElements = new ArrayList<>(arrayNode.elements().size());
+                for (ResolvedMapNode element : arrayNode.elements()) {
+                    clonedElements.add(cloneNode(element));
+                }
+                return new ResolvedMapNode.ArrayNode(List.copyOf(clonedElements));
+            }
+            if (node instanceof ResolvedMapNode.VariableRefNode variableRefNode) {
+                return new ResolvedMapNode.VariableRefNode(variableRefNode.variableId());
+            }
+            if (node instanceof ResolvedMapNode.InputRefNode inputRefNode) {
+                return new ResolvedMapNode.InputRefNode(inputRefNode.inputId());
+            }
+            if (node instanceof ResolvedMapNode.MappingRefNode mappingRefNode) {
+                return new ResolvedMapNode.MappingRefNode(mappingRefNode.mappingId());
+            }
+            return node;
+        }
+
+        private int nodeSize(ResolvedMapNode node) {
+            if (node instanceof ResolvedMapNode.ObjectNode objectNode) {
+                int size = 1;
+                for (ResolvedMapNode.ObjectNode.Field field : objectNode.fields()) {
+                    size += nodeSize(field.value());
+                }
+                return size;
+            }
+            if (node instanceof ResolvedMapNode.ArrayNode arrayNode) {
+                int size = 1;
+                for (ResolvedMapNode element : arrayNode.elements()) {
+                    size += nodeSize(element);
+                }
+                return size;
+            }
+            return 1;
+        }
     }
 
     private static final class OptimizationResult {
@@ -244,7 +342,3 @@ public final class InstructionOptimizer {
         }
     }
 }
-
-
-
-

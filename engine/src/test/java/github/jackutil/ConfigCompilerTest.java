@@ -5,6 +5,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
 
@@ -144,6 +145,47 @@ public class ConfigCompilerTest {
             assertEquals(sharedConst.id(), operands[8][0]);
 
             assertEquals(2, program.literals().size());
+        }
+    }
+
+    @Test
+    public void inlinesSingleUseMappings() throws Exception {
+        try (InputStream in = resource("valid/inline.json")) {
+            CompiledMapping mapping = ConfigCompiler.compile(in);
+            ResolvedConfig config = mapping.config();
+            InstructionProgram program = mapping.program().program();
+
+            ResolvedMapping root = mapping(config, "root");
+            ResolvedMapping detail = mapping(config, "detail");
+            ResolvedMapping shared = mapping(config, "shared");
+
+            InstructionBlock rootBlock = program.blocks().get(root.id());
+            OpCode[] opcodes = rootBlock.opcodes();
+            int[][] operands = rootBlock.operands();
+
+            int writeMappingCount = 0;
+            for (int i = 0; i < opcodes.length; i++) {
+                if (opcodes[i] == OpCode.WRITE_MAPPING) {
+                    writeMappingCount++;
+                    assertEquals(shared.id(), operands[i][0]);
+                }
+            }
+            assertEquals(2, writeMappingCount);
+
+            boolean inlinedDetail = false;
+            for (int i = 0; i < opcodes.length - 1; i++) {
+                if (opcodes[i] == OpCode.WRITE_FIELD) {
+                    String fieldName = program.fieldNames().get(operands[i][0]);
+                    if ("detail".equals(fieldName)) {
+                        inlinedDetail = opcodes[i + 1] == OpCode.BEGIN_OBJECT;
+                        break;
+                    }
+                }
+            }
+            assertTrue("detail field should inline object instructions", inlinedDetail);
+
+            InstructionBlock detailBlock = program.blocks().get(detail.id());
+            assertEquals(OpCode.BEGIN_OBJECT, detailBlock.opcodes()[0]);
         }
     }
 

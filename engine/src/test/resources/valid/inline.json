@@ -1,0 +1,54 @@
+{
+  "META": {
+    "dslVersion": "v2",
+    "name": "inline-mappings",
+    "targetAspect": "urn:test:inline"
+  },
+  "ENGINE": {
+    "api": "v2",
+    "output": "$MAPPINGS.root"
+  },
+  "INPUT": {},
+  "SCHEMA": {},
+  "FUNCTIONS": {},
+  "VARIABLES": {
+    "id": {
+      "type": "string",
+      "required": true
+    },
+    "code": {
+      "type": "string",
+      "required": true
+    }
+  },
+  "MAPPINGS": {
+    "root": {
+      "REF": "Root",
+      "MAP": {
+        "detail": "$MAPPINGS.detail",
+        "sharedOne": "$MAPPINGS.shared",
+        "sharedTwo": "$MAPPINGS.shared"
+      }
+    },
+    "detail": {
+      "REF": "Detail",
+      "MAP": {
+        "id": "$VARIABLES.id",
+        "code": "$VARIABLES.code",
+        "nested": {
+          "REF": "Nested",
+          "MAP": {
+            "id": "$VARIABLES.id"
+          }
+        }
+      }
+    },
+    "shared": {
+      "REF": "Shared",
+      "MAP": {
+        "code": "$VARIABLES.code"
+      }
+    }
+  },
+  "VALIDATION": {}
+}
