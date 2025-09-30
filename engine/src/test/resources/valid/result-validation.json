@@ -1,0 +1,41 @@
+{
+  "META": {
+    "dslVersion": "v2",
+    "name": "test.result.validation",
+    "targetAspect": "urn:test:result"
+  },
+  "ENGINE": {
+    "api": "v2",
+    "output": ".root",
+    "validation": ".output"
+  },
+  "INPUT": {},
+  "SCHEMA": {
+    "output": {
+      "ref": "classpath:test-schemas/output-schema.json",
+      "dialect": "http://json-schema.org/draft-07/schema#",
+      "strict": true
+    }
+  },
+  "FUNCTIONS": {},
+  "VARIABLES": {
+    "value": {
+      "type": "string",
+      "required": true
+    }
+  },
+  "MAPPINGS": {
+    "root": {
+      "REF": "root",
+      "MAP": {
+        "value": ".value"
+      }
+    }
+  },
+  "VALIDATION": {
+    "result": {
+      "schema": ".output",
+      "phase": "post-map"
+    }
+  }
+}

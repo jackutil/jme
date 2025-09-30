@@ -21,18 +21,21 @@ import github.jackutil.compiler.CompiledMapping;
 import github.jackutil.compiler.ConfigCompiler;
 import github.jackutil.compiler.ConfigValidationException;
 import github.jackutil.compiler.ConfigValidator;
-import github.jackutil.compiler.runtime.MappingEngine;
 import github.jackutil.compiler.ir.resolved.ResolvedInput;
+import github.jackutil.compiler.runtime.MappingEngine;
+import github.jackutil.compiler.runtime.validation.ResultValidator;
 
 public final class EngineBinding {
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
     private final CompiledMapping compiled;
     private final MappingEngine engine;
+    private final ResultValidator resultValidator;
 
     private EngineBinding(CompiledMapping compiled) {
         this.compiled = compiled;
         this.engine = new MappingEngine(compiled);
+        this.resultValidator = ResultValidator.create(compiled.config(), MAPPER);
     }
 
     public static EngineBinding fromPath(Path configPath) throws IOException {
@@ -56,7 +59,15 @@ public final class EngineBinding {
     public ExecutionResult execute(String mappingName,
                                    Map<String, Object> inputs,
                                    Map<String, Object> payload) throws IOException {
+        return execute(mappingName, inputs, payload, ValidationMode.ENABLED);
+    }
+
+    public ExecutionResult execute(String mappingName,
+                                   Map<String, Object> inputs,
+                                   Map<String, Object> payload,
+                                   ValidationMode validationMode) throws IOException {
         Objects.requireNonNull(mappingName, "mappingName");
+        ValidationMode mode = validationMode != null ? validationMode : ValidationMode.ENABLED;
         Map<String, Object> safeInputs = inputs != null ? inputs : Map.of();
         Map<String, Object> safePayload = payload != null ? payload : Map.of();
 
@@ -68,6 +79,9 @@ public final class EngineBinding {
         Map<String, Object> output = buffer.size() == 0
             ? Map.of()
             : Map.copyOf(MAPPER.readValue(buffer.toByteArray(), MAP_TYPE));
+        if (mode == ValidationMode.ENABLED) {
+            resultValidator.validate(output);
+        }
         String variablesJson = MAPPER.writeValueAsString(engine.variablesSnapshot());
         return new ExecutionResult(compiled, output, variablesJson);
     }
@@ -115,6 +129,11 @@ public final class EngineBinding {
                 throw new UncheckedIOException("Failed to pretty print execution output", ex);
             }
         }
+    }
+
+    public enum ValidationMode {
+        ENABLED,
+        DISABLED
     }
 }
 

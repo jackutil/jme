@@ -50,6 +50,10 @@
       <version>${jackson.version}</version>
     </dependency>
     <dependency>
+      <groupId>com.networknt</groupId>
+      <artifactId>json-schema-validator</artifactId>
+    </dependency>
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>${junit.version}</version>
@@ -161,7 +165,7 @@
                   <version>3.8.6</version>
                 </requireMavenVersion>
                 <requireJavaVersion>
-                  <version>[21,)</version>
+                  <version>21</version>
                 </requireJavaVersion>
               </rules>
             </configuration>

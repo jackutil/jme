@@ -17,15 +17,14 @@ import com.fasterxml.jackson.core.JsonToken;
 public final class ConfigValidator {
     private static final JsonFactory FACTORY = new JsonFactory();
     private static final Set<String> TOP_LEVEL_KEYS = Set.of(
-        "META",
-        "ENGINE",
-        "INPUT",
-        "SCHEMA",
-        "FUNCTIONS",
-        "VARIABLES",
-        "MAPPINGS",
-        "VALIDATION"
-    );
+            "META",
+            "ENGINE",
+            "INPUT",
+            "SCHEMA",
+            "FUNCTIONS",
+            "VARIABLES",
+            "MAPPINGS",
+            "VALIDATION");
 
     public static void validate(InputStream stream) {
         Objects.requireNonNull(stream, "stream");
@@ -80,7 +79,8 @@ public final class ConfigValidator {
                     ensureToken(valueToken, JsonToken.VALUE_STRING, "META." + field + " must be a string");
                     required.remove(field);
                 }
-                case "description", "owner", "lastUpdated" -> ensureToken(valueToken, JsonToken.VALUE_STRING, "META." + field + " must be a string");
+                case "description", "owner", "lastUpdated" ->
+                    ensureToken(valueToken, JsonToken.VALUE_STRING, "META." + field + " must be a string");
                 default -> throw error("Unknown field in META: " + field);
             }
         }
@@ -132,9 +132,11 @@ public final class ConfigValidator {
                         ensureToken(valueToken, JsonToken.VALUE_STRING, "INPUT." + name + ".type must be a string");
                         hasType = true;
                     }
-                    case "required", "nullable" -> ensureBoolean(valueToken, "INPUT." + name + "." + field + " must be boolean");
+                    case "required", "nullable" ->
+                        ensureBoolean(valueToken, "INPUT." + name + "." + field + " must be boolean");
                     case "default" -> skipValue(parser, valueToken);
-                    case "description" -> ensureToken(valueToken, JsonToken.VALUE_STRING, "INPUT." + name + ".description must be a string");
+                    case "description" -> ensureToken(valueToken, JsonToken.VALUE_STRING,
+                            "INPUT." + name + ".description must be a string");
                     default -> throw error("Unknown field in INPUT." + name + ": " + field);
                 }
             }
@@ -143,6 +145,7 @@ public final class ConfigValidator {
             }
         }
     }
+
     private static void validateSchema(JsonParser parser) throws IOException {
         while (parser.nextToken() != JsonToken.END_OBJECT) {
             ensureToken(parser.getCurrentToken(), JsonToken.FIELD_NAME, "SCHEMA must contain schema identifiers");
@@ -155,7 +158,8 @@ public final class ConfigValidator {
                 String field = parser.getCurrentName();
                 JsonToken valueToken = parser.nextToken();
                 switch (field) {
-                    case "ref", "dialect" -> ensureToken(valueToken, JsonToken.VALUE_STRING, "SCHEMA." + name + "." + field + " must be a string");
+                    case "ref", "dialect" -> ensureToken(valueToken, JsonToken.VALUE_STRING,
+                            "SCHEMA." + name + "." + field + " must be a string");
                     case "strict" -> ensureBoolean(valueToken, "SCHEMA." + name + ".strict must be boolean");
                     default -> throw error("Unknown field in SCHEMA." + name + ": " + field);
                 }
@@ -195,7 +199,8 @@ public final class ConfigValidator {
                         hasType = true;
                     }
                     case "pattern" -> {
-                        ensureToken(valueToken, JsonToken.VALUE_STRING, "FUNCTIONS." + name + ".pattern must be string");
+                        ensureToken(valueToken, JsonToken.VALUE_STRING,
+                                "FUNCTIONS." + name + ".pattern must be string");
                         hasPattern = true;
                     }
                     case "fn" -> {
@@ -203,7 +208,8 @@ public final class ConfigValidator {
                         hasFn = true;
                     }
                     case "args" -> ensureArray(parser, valueToken, "FUNCTIONS." + name + ".args");
-                    case "description" -> ensureToken(valueToken, JsonToken.VALUE_STRING, "FUNCTIONS." + name + ".description must be string");
+                    case "description" -> ensureToken(valueToken, JsonToken.VALUE_STRING,
+                            "FUNCTIONS." + name + ".description must be string");
                     default -> throw error("Unknown field in FUNCTIONS." + name + ": " + field);
                 }
             }
@@ -236,11 +242,14 @@ public final class ConfigValidator {
                         ensureToken(valueToken, JsonToken.VALUE_STRING, "VARIABLES." + name + ".type must be string");
                         hasType = true;
                     }
-                    case "required", "nullable" -> ensureBoolean(valueToken, "VARIABLES." + name + "." + field + " must be boolean");
-                    case "constraints" -> ensureArrayOfStrings(parser, valueToken, "VARIABLES." + name + ".constraints");
+                    case "required", "nullable" ->
+                        ensureBoolean(valueToken, "VARIABLES." + name + "." + field + " must be boolean");
+                    case "constraints" ->
+                        ensureArrayOfStrings(parser, valueToken, "VARIABLES." + name + ".constraints");
                     case "default" -> skipValue(parser, valueToken);
                     case "derive" -> validateDerive(parser, valueToken, name);
-                    case "maxLength", "minLength", "minItems", "maxItems" -> ensureToken(valueToken, JsonToken.VALUE_NUMBER_INT, "VARIABLES." + name + "." + field + " must be integer");
+                    case "maxLength", "minLength", "minItems", "maxItems" -> ensureToken(valueToken,
+                            JsonToken.VALUE_NUMBER_INT, "VARIABLES." + name + "." + field + " must be integer");
                     case "enum" -> ensureArray(parser, valueToken, "VARIABLES." + name + ".enum");
                     case "items" -> {
                         ensureToken(valueToken, JsonToken.START_OBJECT, "VARIABLES." + name + ".items must be object");
@@ -250,8 +259,10 @@ public final class ConfigValidator {
                         ensureToken(valueToken, JsonToken.START_OBJECT, "VARIABLES." + name + ".fields must be object");
                         parser.skipChildren();
                     }
-                    case "requiredFields" -> ensureArrayOfStrings(parser, valueToken, "VARIABLES." + name + ".requiredFields");
-                    case "description" -> ensureToken(valueToken, JsonToken.VALUE_STRING, "VARIABLES." + name + ".description must be string");
+                    case "requiredFields" ->
+                        ensureArrayOfStrings(parser, valueToken, "VARIABLES." + name + ".requiredFields");
+                    case "description" -> ensureToken(valueToken, JsonToken.VALUE_STRING,
+                            "VARIABLES." + name + ".description must be string");
                     default -> throw error("Unknown field in VARIABLES." + name + ": " + field);
                 }
             }
@@ -265,12 +276,14 @@ public final class ConfigValidator {
         ensureToken(token, JsonToken.START_OBJECT, "VARIABLES." + variableName + ".derive must be object");
         boolean hasFunction = false;
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            ensureToken(parser.getCurrentToken(), JsonToken.FIELD_NAME, "VARIABLES." + variableName + ".derive requires field names");
+            ensureToken(parser.getCurrentToken(), JsonToken.FIELD_NAME,
+                    "VARIABLES." + variableName + ".derive requires field names");
             String field = parser.getCurrentName();
             JsonToken valueToken = parser.nextToken();
             switch (field) {
                 case "function" -> {
-                    ensureToken(valueToken, JsonToken.VALUE_STRING, "VARIABLES." + variableName + ".derive.function must be string");
+                    ensureToken(valueToken, JsonToken.VALUE_STRING,
+                            "VARIABLES." + variableName + ".derive.function must be string");
                     hasFunction = true;
                 }
                 case "args" -> ensureArray(parser, valueToken, "VARIABLES." + variableName + ".derive.args");
@@ -322,12 +335,14 @@ public final class ConfigValidator {
             boolean hasSchema = false;
             boolean hasPhase = false;
             while (parser.nextToken() != JsonToken.END_OBJECT) {
-                ensureToken(parser.getCurrentToken(), JsonToken.FIELD_NAME, "VALIDATION entry must contain field names");
+                ensureToken(parser.getCurrentToken(), JsonToken.FIELD_NAME,
+                        "VALIDATION entry must contain field names");
                 String field = parser.getCurrentName();
                 JsonToken valueToken = parser.nextToken();
                 switch (field) {
                     case "schema" -> {
-                        ensureToken(valueToken, JsonToken.VALUE_STRING, "VALIDATION." + name + ".schema must be string");
+                        ensureToken(valueToken, JsonToken.VALUE_STRING,
+                                "VALIDATION." + name + ".schema must be string");
                         hasSchema = true;
                     }
                     case "phase" -> {
@@ -387,11 +402,3 @@ public final class ConfigValidator {
         return new ConfigValidationException(message);
     }
 }
-
-
-
-
-
-
-
-
