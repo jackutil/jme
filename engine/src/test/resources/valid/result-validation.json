@@ -6,8 +6,8 @@
   },
   "ENGINE": {
     "api": "v2",
-    "output": ".root",
-    "validation": ".output"
+    "output": "$MAPPINGS.root",
+    "validation": "$SCHEMA.output"
   },
   "INPUT": {},
   "SCHEMA": {
@@ -28,14 +28,15 @@
     "root": {
       "REF": "root",
       "MAP": {
-        "value": ".value"
+        "value": "$VARIABLES.value"
       }
     }
   },
   "VALIDATION": {
     "result": {
-      "schema": ".output",
+      "schema": "$SCHEMA.output",
       "phase": "post-map"
     }
   }
 }
+

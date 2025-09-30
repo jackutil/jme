@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
+import com.networknt.schema.JsonNodePath;
 import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
 
@@ -113,10 +114,10 @@ public final class ResultValidator {
     private MappingException failure(SchemaCheck check, String message, Set<ValidationMessage> messages) {
         List<Map<String, String>> errors = new ArrayList<>(messages.size());
         messages.stream()
-            .sorted(Comparator.comparing(ValidationMessage::getPath))
+            .sorted(Comparator.comparing(ResultValidator::messagePath))
             .forEach(msg -> {
                 Map<String, String> entry = new LinkedHashMap<>(2);
-                entry.put("path", msg.getPath());
+                entry.put("path", messagePath(msg));
                 entry.put("message", msg.getMessage());
                 errors.add(entry);
             });
@@ -133,6 +134,11 @@ public final class ResultValidator {
             details
         );
         return new MappingException(diagnostic);
+    }
+
+    private static String messagePath(ValidationMessage message) {
+        JsonNodePath location = message.getInstanceLocation();
+        return location != null ? location.toString() : "";
     }
 
     private static SchemaCheck buildSchemaCheck(SchemaDef schema,
